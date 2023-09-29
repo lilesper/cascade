@@ -101,7 +101,7 @@ def createServer(root = process.cwd(), dev? = import.meta.env.MODE === "developm
 			workerSrc: ["'self'", "blob:"]
 			styleSrc: ["'self'", "'unsafe-inline'"]
 			imgSrc: ["'self'", "data:", "https://explorer-api.walletconnect.com", "https://pbs.twimg.com", "https://d3egfmvgqzu76k.cloudfront.net"]
-			connectSrc: ["'self'", "ws://localhost:28000", "https://prod.spline.design", "https://pub.highlight.run", "wss://relay.walletconnect.com", "https://explorer-api.walletconnect.com", "https://discord.com"]
+			connectSrc: ["'self'", "ws://localhost:28000", "https://prod.spline.design", "https://draft.spline.design", "https://pub.highlight.run", "wss://relay.walletconnect.com", "https://explorer-api.walletconnect.com", "https://discord.com"]
 			fontSrc: ["'self'", "https:"]
 			objectSrc: ["'none'"]
 			frameSrc: ["https://verify.walletconnect.org", "https://verify.walletconnect.com"]
@@ -138,7 +138,6 @@ def createServer(root = process.cwd(), dev? = import.meta.env.MODE === "developm
 					<title> "Frenpass | KeyHolder Access Management"
 					<meta name="description" content="Frenpass helps Friend Tech Key Holders go places">
 					<link rel="icon" type="image/png" href="/images/frenpass-ico.png">
-					
 					if dev?
 						<script type="module" src="/@vite/client">
 						<script type="module" src="/src/main.js">
