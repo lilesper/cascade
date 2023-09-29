@@ -165,6 +165,8 @@ def createServer(root = process.cwd(), dev? = import.meta.env.MODE === "developm
 const {app} = await createServer!
 console.log "server created"
 
+monitorRoles.start! if process.env.ENV is "production"
+
 const server = app.listen port, do console.log "http://localhost:{port}"
 const exitProcess = do
 	console.log "exiting process"

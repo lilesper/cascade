@@ -38,7 +38,6 @@ def listener guild, address
 	catch e E e, {...guild}, address
 
 export const monitorRoles = cronjob.schedule("* * * * * *", &, {scheduled: no, runOnInit: no}) do
-	L "running"
 	try
 		const users = await prisma.keyHolder.findMany
 			where:

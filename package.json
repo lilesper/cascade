@@ -9,7 +9,9 @@
     "build:server": "imba build --vite server/index.imba",
     "preview": "cross-env NODE_ENV=production node ./dist/index.mjs",
     "debug": "node --inspect-brk dist/server",
-    "test": "imba test run src"
+    "test": "imba test run src",
+    "up": "sh deploy.sh",
+    "up:prod": "sh deploy.sh production"
   },
   "devDependencies": {
     "imba": "^2.0.0-alpha.231",
