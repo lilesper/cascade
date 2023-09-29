@@ -17,6 +17,7 @@ Dockerfile
 dist
 dist_client
 .dockerignore
+deploy.sh
 
 # Editor directories and files
 .vscode/*
