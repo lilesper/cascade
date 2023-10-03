@@ -6,7 +6,7 @@ Frenpass is a powerful tool designed for key holders on Friend Tech. It allows y
 
 To set up Frenpass, follow these steps:
 
-1. Head to [Frenpass](https://frenpass.app) and connect your wallet.
+1. Head to [Frenpass](https://frenpass.app) and connect with Discord Oauth.
 
 2. Click on the "Add to Discord" button. This will open a new window for Discord authorization.
 
