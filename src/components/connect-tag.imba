@@ -127,17 +127,22 @@ tag connect-tag
 			checkIfVerified!
 		else
 			checkingAccount? = yes
+			
 			imba.commit!
 
 			try
 				const address = (await w3.client.requestAddresses!)[0]
 				const ftAddress = await store.getFtAddress address
+				
+				if ftAddress
+					pendingUser =
+						address: getAddress address
+						ftAddress: getAddress ftAddress
 
-				pendingUser =
-					address: getAddress address
-					ftAddress: getAddress ftAddress
-
-				checkIfVerified!
+					checkIfVerified!
+				else
+					w3.ftData = "not found"
+					imba.commit!
 			catch e
 				E e
 				disconnect!
@@ -327,6 +332,7 @@ tag connect-tag
 		w3.chainId = 8453
 		w3.sig = ""
 		w3.user = null
+		w3.ftData = null
 		name = ""
 		avatar = ""
 		auth? = no
@@ -419,7 +425,7 @@ tag connect-tag
 					<div[ta:center d:vflex a:stretch]>
 						<div[d:vflex a:center]>
 							<div[bg:sky1 p:3 rd:100px]>
-								<icon-tag[c:sky6 w:6 h:6] name="edit-02">
+								<icon-tag[c:sky6 w:6 h:6] name="edit-04">
 							<h2[lh:120% mt:4]> "Verify {pendingAccount.slice 0,6}...{pendingAccount.slice pendingAccount.length - 4}" if pendingAccount
 							<p[mt:2 lh:150% c:cooler5]> "Please sign a message to verify that you are the owner of this wallet"
 						

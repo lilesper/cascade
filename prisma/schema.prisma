@@ -1,16 +1,52 @@
 generator client {
-  provider = "prisma-client-js"
+    provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+    provider = "postgresql"
+    url      = env("DATABASE_URL")
 }
 
-model KeyHolder {
-  discordServer String @default("")
-  discordUserId String @default("")
-  discordRoleId String @default("")
-  address       String @id @default("")
-  ftAddress     String @default("")
+model DiscordServer {
+    id          String  @id @unique
+    creatorId   String
+    ftAddress   String?
+    roleId      String
+    isConnected Boolean
+    creator     User    @relation(fields: [creatorId], references: [discordId])
+
+    @@index([creatorId])
+}
+
+model User {
+    id              String          @id @unique
+    auth_session    Session[]
+    key             Key[]
+    ftAddress       String?
+    discordId       String?         @unique
+    discordUsername String?
+    discordAvatar   String?
+    twitterId       String?
+    twitterUsername String?
+    twitterAvatar   String?
+    discordServers  DiscordServer[]
+}
+
+model Session {
+    id             String @id @unique
+    user_id        String
+    active_expires BigInt
+    idle_expires   BigInt
+    user           User   @relation(references: [id], fields: [user_id], onDelete: Cascade)
+
+    @@index([user_id])
+}
+
+model Key {
+    id              String  @id @unique
+    hashed_password String?
+    user_id         String
+    user            User    @relation(references: [id], fields: [user_id], onDelete: Cascade)
+
+    @@index([user_id])
 }

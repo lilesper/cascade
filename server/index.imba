@@ -2,9 +2,6 @@ import path from "path"
 import express from "express"
 import compression from "compression"
 import serveStatic from "serve-static"
-import Session from "express-session"
-import RedisStore from "connect-redis"
-import { createClient } from "redis"
 import * as Vite from "vite"
 import np from 'node:path'
 import url from 'node:url'
@@ -12,7 +9,7 @@ import prisma from "./prisma.imba"
 import auth from "./auth.imba"
 import ft from "./ft.imba"
 import discord, { monitorRoles } from "./discord.imba"
-import { errorHandler } from "../src/store/index"
+import { store } from "../src/store/index"
 import helmet from "helmet"
 import App from "../src/App.imba"
 
@@ -39,7 +36,7 @@ const portArgPos = args.indexOf("--port") + 1
 if portArgPos > 0
 	port = parseInt(args[portArgPos], 10)
 
-global.E = do(e, args) errorHandler e, args
+global.E = do(e, args) store.errorHandler e, args
 
 def createServer(root = process.cwd(), dev? = import.meta.env.MODE === "development")
 	const resolve = do(p) path.resolve(root, p)
@@ -48,27 +45,8 @@ def createServer(root = process.cwd(), dev? = import.meta.env.MODE === "developm
 	if !dev?
 		manifest = try (await import("../dist_client/manifest.json")).default
 	
-	const app = express()
+	const app = express!
 	const configFile = np.join(_dirname, "../vite.config.js")
-	
-	const client = if dev? then createClient! else createClient
-		username: process.env.REDIS_USERNAME
-		password: process.env.REDIS_PASSWORD
-		socket:
-			host: process.env.REDIS_HOST
-			port: Number process.env.REDIS_PORT
-			tls: no
-			reconnectStrategy: do(retries)
-				if retries > 10
-					const error = new Error "Too many retries on REDIS — connection terminated."
-					E error
-					error
-				else
-					retries
-
-
-	client.connect!.catch do E $1
-	client.on "error", do E $1
 	
 	let vite
 	
@@ -100,24 +78,13 @@ def createServer(root = process.cwd(), dev? = import.meta.env.MODE === "developm
 			scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'", "https://verify.walletconnect.org", "https://verify.walletconnect.com", "https://static.highlight.io"]
 			workerSrc: ["'self'", "blob:"]
 			styleSrc: ["'self'", "'unsafe-inline'"]
-			imgSrc: ["'self'", "data:", "https://explorer-api.walletconnect.com", "https://pbs.twimg.com", "https://d3egfmvgqzu76k.cloudfront.net"]
+			imgSrc: ["'self'", "data:", "https://explorer-api.walletconnect.com", "https://pbs.twimg.com", "https://d3egfmvgqzu76k.cloudfront.net", "https://cdn.discordapp.com"]
 			connectSrc: ["'self'", "ws://localhost:28000", "https://prod.spline.design", "https://draft.spline.design", "https://pub.highlight.run", "wss://relay.walletconnect.com", "https://explorer-api.walletconnect.com", "https://discord.com"]
 			fontSrc: ["'self'", "https:"]
 			objectSrc: ["'none'"]
 			frameSrc: ["https://verify.walletconnect.org", "https://verify.walletconnect.com"]
-
-	app.use Session
-		name: "frenpass"
-		secret: process.env.SECRET
-		saveUninitialized: yes
-		resave: no
-		cookie:
-			secure: "auto"
-			sameSite: yes
-		store: new RedisStore
-			client: client
-			prefix: "s:"
-			ttl: 86400000
+	
+	app.use express.urlencoded!
 	app.use express.json!
 
 	auth app
@@ -125,19 +92,46 @@ def createServer(root = process.cwd(), dev? = import.meta.env.MODE === "developm
 	discord app
 	ft app
 
+	if process.env.ENV is "production"
+		app.all /.*/, do(req, res, next)
+			let host = req.header "host"
+			
+			if host.startsWith "www."
+				res.redirect 301, "http://" + host.replace("www.", "") + req.url
+			else
+				next!
+
 	app.use "/*/assets", express.static (path.join (new URL(".", import.meta.url).pathname, "dist_client/assets"))
 
-	app.get "*", do(req, res)
+	app.use "*", do(req, res)
 		const url = req.originalUrl
 		a++
 		try
 			let html = String <html lang="en">
 				<head>
 					<meta charset="UTF-8">
+					
+					# seo tags
 					<meta name="viewport" content="width=device-width, initial-scale=1">
-					<title> "Frenpass | KeyHolder Access Management"
-					<meta name="description" content="Frenpass helps Friend Tech Key Holders go places">
+					<meta name="description" content="Frenpass helps active Friend Tech users manage large audiences by migrating them to an organized Discord server with on-chain verification and auto-moderation">
+					<title> "Frenpass | Organize your community beyond the chaos of Friend Tech"
 					<link rel="icon" type="image/png" href="/images/frenpass-ico.png">
+
+					# open graph tags
+					<meta property="og:url" content="https://www.frenpass.app">
+					<meta property="og:type" content="website">
+					<meta property="og:title" content="Organize your community beyond the chaos of Friend Tech">
+					<meta property="og:description" content="Frenpass helps active Friend Tech users manage large audiences by migrating them to an organized Discord server with on-chain verification and auto-moderation">
+					<meta property="og:image" content="/images/og-img.jpg">
+
+					# open graph tags (twitter)
+					<meta name="twitter:card" content="summary_large_image">
+					<meta property="twitter:domain" content="frenpass.app">
+					<meta property="twitter:url" content="https://www.frenpass.app">
+					<meta name="twitter:title" content="Organize your community beyond the chaos of Friend Tech">
+					<meta name="twitter:description" content="Frenpass helps active Friend Tech users manage large audiences by migrating them to an organized Discord server with on-chain verification and auto-moderation">
+					<meta name="twitter:image" content="/images/og-img.jpg">
+
 					if dev?
 						<script type="module" src="/@vite/client">
 						<script type="module" src="/src/main.js">
@@ -164,7 +158,7 @@ def createServer(root = process.cwd(), dev? = import.meta.env.MODE === "developm
 const {app} = await createServer!
 console.log "server created"
 
-monitorRoles.start! if process.env.ENV is "production"
+monitorRoles.start! if process.env.ENV is "production" or process.env.ENV is "development"
 
 const server = app.listen port, do console.log "http://localhost:{port}"
 const exitProcess = do

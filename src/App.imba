@@ -1,30 +1,29 @@
-import * as store from "./store/index.imba"
+import { store } from "./store/index.imba"
 import "./styles.imba"
 import "./components/nav-tag.imba"
 import "./components/modal-tag.imba"
-import "./components/connect-tag.imba"
 import "./components/icon-tag.imba"
 import "./components/tip-tag.imba"
 import "./components/dropdown-tag.imba"
-import "./components/discord-tag.imba"
+import "./components/discord-setup.imba"
 import "./components/notify-tag.imba"
+import "./components/confirm-modal.imba"
 import "./components/route-tag.imba"
+import "./components/user-tag.imba"
+
+global.S = store
 
 def Index do (await import "./pages/Index.imba").default
 def Discord do (await import "./pages/Discord.imba").default
-
 const web? = !import.meta.env.SSR
 const dev? = if web? and window.location.hostname is "localhost" then yes else no
 
 extend tag element
-	get store do store
-	get w3 do store.w3
-	get client do store.client
 	get dev? do dev?
 	get web? do web?
 
 	def onlyConnected
-		if !w3.client
+		if !S.w3.client
 			emit "triggerConnection"
 			no
 	
@@ -43,7 +42,7 @@ export default tag App
 	
 	def mount
 		document.getElementById("dev_ssr_css")..remove!
-		
+
 		const { H } = await import "highlight.run"
 
 		H.init "jd4k49e5",
@@ -58,13 +57,18 @@ export default tag App
 			else
 				H.consumeError e, "{e.message}"
 
+		S.user = await store.fetch "/user"
+		
+		
+
 	def render
 		<self> if web?
 			<div.main[d:flex fld:column ai:center w:100% mb:20]>
 				<nav-tag[my:8 zi:100]>
-
+				
 				<route-tag route="/" page=Index>
 				<route-tag route="/discord/" page=Discord>
-				<route-tag route="/discord/:subject" page=Discord>
-			
+				<route-tag route="/discord/:id" page=Discord>
+
 			<notify-tag>
+			<confirm-modal>

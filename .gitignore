@@ -13,10 +13,12 @@ node_modules
 *.local
 .env
 purge_cache.sh
+.dockerignore
 Dockerfile
 dist
 dist_client
-.dockerignore
+app.d.ts
+prisma/migrations
 deploy.sh
 
 # Editor directories and files

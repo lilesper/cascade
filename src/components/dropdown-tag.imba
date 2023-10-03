@@ -34,5 +34,5 @@ tag dropdown-tag
 
 	<self[d:flex zi:10]>
 		if show?
-			<div.card[pos:absolute y:4px t:100% bg:cooler9 fw:500 c:cooler0 p:3 rd:8 d:vflex a:flex-start y@off:-12px opacity@off:0 ease:.5s back-out] ease>
+			<div.card[pos:absolute y:4px t:100% bg:cooler9 fw:500 c:cooler0 p:2 rd:16 d:vflex a:flex-start y@off:-12px opacity@off:0 ease:.5s back-out] ease>
 				<slot>
