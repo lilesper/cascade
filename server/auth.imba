@@ -1,19 +1,22 @@
 import "lucia/polyfill/node"
 import { lucia } from "lucia"
-import { prisma } from "@lucia-auth/adapter-prisma"
-import { pc } from "./prisma.imba"
+import { prisma as prismaAdapter } from "@lucia-auth/adapter-prisma"
+import { ioredis as redisAdapter } from "@lucia-auth/adapter-session-redis"
+import { prisma } from "./prisma.imba"
 import { express } from "lucia/middleware"
 import { discord, twitter } from "@lucia-auth/oauth/providers"
 import { OAuthRequestError } from "@lucia-auth/oauth"
 import { parseCookie } from "lucia/utils"
+import { redis } from "./redis.imba"
 
 const dev? = process.env.ENV is "development"
 
 export const auth = lucia
 	env: if dev? then "DEV" else "PROD"
-	adapter: prisma pc
+	adapter: 
+		user: prismaAdapter prisma
+		session: redisAdapter redis
 	middleware: express!
-
 	getUserAttributes: do
 		discordId: $1.discordId
 		discordUsername: $1.discordUsername
@@ -140,7 +143,7 @@ export default do(app)
 				user = await auth.transformDatabaseUser (await auth.getUser userId)
 				await createKey userId if user
 
-				await pc.user.update
+				await prisma.user.update
 					where:
 						id: userId
 					data:
