@@ -1,7 +1,7 @@
 import { PrismaClient } from "@prisma/client"
 import fetch from "node-fetch"
 
-export const pc = new PrismaClient!
+export const prisma = new PrismaClient!
 
 export def getTrades query
 	try
@@ -18,21 +18,21 @@ export def getTrades query
 export default do(app)
 	app.post("/create") do({body}, res) 
 		try
-			res.send await pc[body.table].create data: body.data
+			res.send await prisma[body.table].create data: body.data
 		catch e
 			E e, body
 			res.status(500).send { error: e.message }
 	
 	app.post("/get") do({body}, res)
 		try
-			res.send await pc[body.table].findUnique where: body.query
+			res.send await prisma[body.table].findUnique where: body.query
 		catch e
 			E e, body
 			res.status(500).send { error: e.message }
 
 	app.post("/update") do({body}, res) 
 		try
-			res.send await pc[body.table].update
+			res.send await prisma[body.table].update
 				where: body.query
 				data: body.data
 		catch e
@@ -41,7 +41,7 @@ export default do(app)
 	
 	app.post("/delete") do({body}, res)
 		try
-			res.send await pc[body.table].delete
+			res.send await prisma[body.table].delete
 				where: body.query
 		catch e
 			E e, body
@@ -49,7 +49,7 @@ export default do(app)
 	
 	app.post("/fetch") do({body}, res)
 		try
-			res.send await pc[body.table].findMany where: body.query
+			res.send await prisma[body.table].findMany where: body.query
 		catch e
 			E e, body
 			res.status(500).send { error: e.message }
