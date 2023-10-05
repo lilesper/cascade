@@ -30,7 +30,6 @@ model User {
     twitterId       String?
     twitterUsername String?
     twitterAvatar   String?
-    active          Boolean         @default(true)
     discordServers  DiscordServer[]
     memberships     Membership[]
 }

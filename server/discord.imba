@@ -9,7 +9,7 @@ import { padlock } from "./redis.imba"
 
 const { contract, ftApi } = store
 
-const discord = new Client {intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMembers]}
+export const discord = new Client {intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMembers]}
 
 discord.login process.env.DISCORD_TOKEN
 discord.setMaxListeners 50
@@ -21,7 +21,7 @@ discord.on "guildCreate", do(guild)
 
 	const lockKey = "lock:guildCreate:{guild.id}"
 
-	if await padlock.lock lockKey, 1000
+	if await padlock.lock lockKey, 1
 		try
 			const role = await guild.roles.create
 				name: "🔑 Key Holder"
@@ -44,9 +44,15 @@ discord.on "guildCreate", do(guild)
 					padlock.unlock lockKey
 					
 					try
-						await prisma.discordServer.create
-							data:
+						await prisma.discordServer.upsert
+							where:
 								id: guild.id
+							create:
+								id: guild.id
+								creatorId: botFirstAdded.executor.id
+								roleId: role.id
+								isConnected: yes
+							update:
 								creatorId: botFirstAdded.executor.id
 								roleId: role.id
 								isConnected: yes
@@ -63,64 +69,77 @@ discord.on "guildDelete", do(guild)
 	
 	const lockKey = "lock:guildDelete:{guild.id}"
 
-	if await padlock.lock lockKey, 1000
+	if await padlock.lock lockKey, 1
 		try
-			await prisma.discordServer.delete
+			await prisma.discordServer.update
 				where:
 					id: guild.id
+				data:
+					isConnected: no
+			await prisma.membership.deleteMany
+				where:
+					serverId: guild.id
 			
 			padlock.unlock lockKey
 		catch e E e
 
-export const monitorRoles = cronjob.schedule("*/30 * * * *", &, {scheduled: no, runOnInit: no}) do
+export const monitorRoles = cronjob.schedule("*/5 * * * *", &, {scheduled: no, runOnInit: no}) do
+	L "checking roles"
+	
 	const lockKey = "lock:monitorRoles"
+	
+	L lockKey
+	
+	if await padlock.lock lockKey, 4
+		def deleteMembership userId, serverId
+			await prisma.membership.delete
+				where:
+					userId_serverId:
+						userId: userId
+						serverId: serverId
 
-	if await padlock.lock lockKey, 4000
 		try
-			const [users, discordServers] = await Promise.all [
-				prisma.user.findMany
-					where:
-						active: yes
-						ftAddress:
-							not: ""
-				prisma.discordServer.findMany
-					where:
-						ftAddress:
-							not: ""
-			]
+			const memberships = await prisma.membership.findMany
+				include:
+					user: yes
+					discordServer: yes
 			
-			users.forEach do(u)
-				getTrades({trader: getAddress u.ftAddress})
-					.then(do(trades) 
-						return if !trades
+			L memberships.length
+			
+			for m in memberships
+				L "MEMBERSHIP--------------------------------------"
+				L m.serverId, m.userId
+				
+				const sharesBalance = try await contract.read.sharesBalance [m.discordServer.ftAddress, m.user.ftAddress]
+				catch e
+					E e, m.discordServer.ftAddress, m.user.ftAddress
+					if !m.user.ftAddress
+						await deleteMembership m.userId, m.serverId
+						L "removed membership"
+				
+				L m.discordServer.ftAddress
+				L m.user.ftAddress
+				L sharesBalance
+				
+				if sharesBalance is 0n
+					try
+						const guild = await discord.guilds.fetch m.serverId
 						
-						const subjects = [...new Set trades.map do $1.subject]
-						const frenPassSubjects = subjects.filter do(s) users.some do isAddressEqual $1.ftAddress, s
+						const member = try await guild.members.fetch m.user.discordId
+						catch e 
+							if e.code is 10007
+								await deleteMembership m.userId, m.serverId
+								return L "removed membership"
+							else
+								E e, "tried to get member"
 						
-						for subject in frenPassSubjects
-							const sharesBalance = await contract.read.sharesBalance [subject, u.ftAddress]
+						const roleObj = await guild.roles.fetch m.discordServer.roleId
 
-							if sharesBalance is 0n
-								try
-									const discordServer = discordServers.find do isAddressEqual $1.ftAddress, subject
-									const guild = await discord.guilds.fetch discordServer.id
-									
-									const member = try await guild.members.fetch u.discordId
-									catch e 
-										if e.code is 10007
-											return prisma.users.update
-												where:
-													id: u.id
-												data:
-													active: no
-									
-									const roleObj = await guild.roles.fetch discordServer.roleId
+						await member.roles.remove roleObj
 
-									await member.roles.remove roleObj
-								catch e
-									E e, subject, u.ftAddress, sharesBalance
-					).catch do(e)
-						E e
+						L "removed"
+					catch e
+						E e, m.discordServer.ftAddress, m.user.ftAddress, sharesBalance
 		catch e
 			E e
 
@@ -183,7 +202,6 @@ export default do(app)
 					data:
 						ftAddress: user.address
 						twitterAvatar: user.twitterPfpUrl
-						active: yes
 				
 				userAddress = user.address
 				
@@ -203,11 +221,10 @@ export default do(app)
 				
 				await member.roles.add roleObj
 		
-				prisma.user.update(
-					where:
-						id: session.user.userId
+				prisma.membership.create(
 					data:
-						active: yes
+						userId: session.user.userId
+						serverId: discordServer.id
 				).catch do E $1
 				
 				res.send true
