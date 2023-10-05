@@ -4,17 +4,18 @@
   "type": "module",
   "scripts": {
     "dev": "imba server/index.imba --vite --",
-    "build": "run-s build:client build:server",
-    "build:client": "vite build -c vite.config.js",
-    "build:server": "imba build --vite server/index.imba",
-    "preview": "cross-env NODE_ENV=production node ./dist/index.mjs",
+    "prep": "run-s build:client build:server",
+    "prep:client": "vite build -c vite.config.js",
+    "prep:server": "imba build --vite server/index.imba",
+    "view": "cross-env NODE_ENV=production node ./dist/index.mjs",
     "debug": "node --inspect-brk dist/server",
     "test": "imba test run src",
     "up": "sh deploy.sh",
     "up:prod": "sh deploy.sh production",
-    "migrate": "prisma migrate dev",
-    "migrate:staging": "cross-env DATABASE_URL=$DATABASE_URL_STAGING prisma migrate deploy",
-    "migrate:prod": "cross-env DATABASE_URL=$DATABASE_URL_PROD prisma migrate deploy"
+    "gen": "prisma generate",
+    "save": "prisma migrate dev",
+    "save:staging": "cross-env DATABASE_URL=$DATABASE_URL_STAGING prisma migrate deploy",
+    "save:prod": "cross-env DATABASE_URL=$DATABASE_URL_PROD prisma migrate deploy"
   },
   "devDependencies": {
     "imba": "^2.0.0-alpha.231",
