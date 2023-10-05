@@ -115,7 +115,7 @@ export const monitorRoles = cronjob.schedule("*/5 * * * *", &, {scheduled: no, r
 					E e, m.discordServer.ftAddress, m.user.ftAddress
 					if !m.user.ftAddress
 						await deleteMembership m.userId, m.serverId
-						L "removed membership"
+						return L "removed membership"
 				
 				L m.discordServer.ftAddress
 				L m.user.ftAddress
@@ -211,7 +211,7 @@ export default do(app)
 					where:
 						id: req.params.discordId
 
-			const keyBalance = await contract.read.sharesBalance [discordServer.ftAddress, userAddress]
+			const keyBalance\bigint = await contract.read.sharesBalance [discordServer.ftAddress, userAddress]
 
 			if keyBalance > 0n
 				const guild = await discord.guilds.fetch discordServer.id
