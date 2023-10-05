@@ -1,16 +1,20 @@
-import path from "path"
 import express from "express"
 import compression from "compression"
 import serveStatic from "serve-static"
-import * as Vite from "vite"
+import helmet from "helmet"
+import { redis } from "./redis.imba"
+
+import path from "path"
 import np from 'node:path'
 import url from 'node:url'
+
 import prisma from "./prisma.imba"
 import auth from "./auth.imba"
 import ft from "./ft.imba"
 import discord, { monitorRoles } from "./discord.imba"
+
+import * as Vite from "vite"
 import { store } from "../src/store/index"
-import helmet from "helmet"
 import App from "../src/App.imba"
 
 let a = 1
@@ -29,7 +33,7 @@ let ssr-styles = ""
 for own key of ssr-css-modules
 	ssr-styles += (await ssr-css-modules[key]()).default
 
-let port = 3000
+let port = Number process.env.PORT or 3000
 const args = process.argv.slice(2)
 const portArgPos = args.indexOf("--port") + 1
 
@@ -37,6 +41,8 @@ if portArgPos > 0
 	port = parseInt(args[portArgPos], 10)
 
 global.E = do(e, args) store.errorHandler e, args
+
+redis.on "error", do E $1
 
 def createServer(root = process.cwd(), dev? = import.meta.env.MODE === "development")
 	const resolve = do(p) path.resolve(root, p)
@@ -84,7 +90,7 @@ def createServer(root = process.cwd(), dev? = import.meta.env.MODE === "developm
 			objectSrc: ["'none'"]
 			frameSrc: ["https://verify.walletconnect.org", "https://verify.walletconnect.com"]
 	
-	app.use express.urlencoded!
+	app.use express.urlencoded extended: yes
 	app.use express.json!
 
 	auth app
@@ -158,7 +164,7 @@ def createServer(root = process.cwd(), dev? = import.meta.env.MODE === "developm
 const {app} = await createServer!
 console.log "server created"
 
-monitorRoles.start! if process.env.ENV is "production" or process.env.ENV is "development"
+monitorRoles.start! if process.env.ENV isnt "staging"
 
 const server = app.listen port, do console.log "http://localhost:{port}"
 const exitProcess = do
