@@ -103,7 +103,10 @@ export const monitorRoles = cronjob.schedule("*/30 * * * *", &, {scheduled: no, 
 								try
 									const discordServer = discordServers.find do isAddressEqual $1.ftAddress, subject
 									const guild = await discord.guilds.fetch discordServer.id
-									const member = await guild.members.fetch u.discordId
+									
+									const member = try await guild.members.fetch u.discordId
+									catch e return if e.code is 10007
+
 									const roleObj = await guild.roles.fetch discordServer.roleId
 									
 									await member.roles.remove roleObj
