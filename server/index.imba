@@ -120,7 +120,9 @@ def createServer(root = process.cwd(), dev? = import.meta.env.MODE === "developm
 					# seo tags
 					<meta name="viewport" content="width=device-width, initial-scale=1">
 					<meta name="description" content="Frenpass helps active Friend Tech users manage large audiences by migrating them to an organized Discord server with on-chain verification and auto-moderation">
+					
 					<title> "Frenpass | Organize your community beyond the chaos of Friend Tech"
+					
 					<link rel="icon" type="image/png" href="/images/frenpass-ico.png">
 
 					# open graph tags
@@ -145,7 +147,9 @@ def createServer(root = process.cwd(), dev? = import.meta.env.MODE === "developm
 					else
 						const prod-src = manifest["src/main.js"].file
 						const css-files = manifest["src/main.js"].css
+						
 						<script type="module" src=prod-src>
+						
 						for css-file in css-files
 							<style src=css-file>
 				
