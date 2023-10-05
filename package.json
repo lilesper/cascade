@@ -4,7 +4,7 @@
   "type": "module",
   "scripts": {
     "dev": "imba server/index.imba --vite --",
-    "prep": "run-s build:client build:server",
+    "prep": "run-s prep:client prep:server",
     "prep:client": "vite build -c vite.config.js",
     "prep:server": "imba build --vite server/index.imba",
     "view": "cross-env NODE_ENV=production node ./dist/index.mjs",
