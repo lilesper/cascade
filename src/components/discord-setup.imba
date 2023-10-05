@@ -85,7 +85,10 @@ tag discord-setup
 	def mount
 		checking? = yes
 		
-		discordServer = try (await S.query "discordServer", {creatorId: S.user.discordId})[0]
+		discordServer = try (await S.query "discordServer", 
+			creatorId: S.user.discordId
+			isConnected: yes
+		)[0]
 		catch e E e
 		
 		checking? = no

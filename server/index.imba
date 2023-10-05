@@ -40,7 +40,7 @@ const portArgPos = args.indexOf("--port") + 1
 if portArgPos > 0
 	port = parseInt(args[portArgPos], 10)
 
-global.E = do(e, args) store.errorHandler e, args
+global.E = do(e, ...args) store.errorHandler e, args
 
 redis.on "error", do E $1
 
@@ -166,13 +166,13 @@ def createServer(root = process.cwd(), dev? = import.meta.env.MODE === "developm
 		vite: vite
 
 const {app} = await createServer!
-console.log "server created"
+L "server created"
 
 monitorRoles.start! if process.env.ENV isnt "staging"
 
-const server = app.listen port, do console.log "http://localhost:{port}"
+const server = app.listen port, do L "http://localhost:{port}"
 const exitProcess = do
-	console.log "exiting process"
-	try await server.close do console.log "server closed" finally process.exit 0
+	L "exiting process"
+	try await server.close do L "server closed" finally process.exit 0
 
 process.stdin.on "end", exitProcess

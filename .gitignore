@@ -28,6 +28,7 @@ purge_cache.sh
 *.sw?
 .gitignore_backup
 
+scripts
 deploy.sh
 Dockerfile
 dist
@@ -35,3 +36,4 @@ dist_client
 app.d.ts
 prisma/migrations
 railway.toml
+backups
