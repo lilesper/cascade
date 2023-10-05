@@ -8,12 +8,13 @@ datasource db {
 }
 
 model DiscordServer {
-    id          String  @id @unique
+    id          String       @id @unique
     creatorId   String
     ftAddress   String?
     roleId      String
     isConnected Boolean
-    creator     User    @relation(fields: [creatorId], references: [discordId])
+    creator     User         @relation(fields: [creatorId], references: [discordId])
+    memberships Membership[]
 
     @@index([creatorId])
 }
@@ -29,7 +30,18 @@ model User {
     twitterId       String?
     twitterUsername String?
     twitterAvatar   String?
+    active          Boolean         @default(true)
     discordServers  DiscordServer[]
+    memberships     Membership[]
+}
+
+model Membership {
+    userId        String
+    serverId      String
+    user          User          @relation(fields: [userId], references: [id])
+    discordServer DiscordServer @relation(fields: [serverId], references: [id])
+
+    @@id([userId, serverId])
 }
 
 model Session {

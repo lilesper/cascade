@@ -80,6 +80,7 @@ export const monitorRoles = cronjob.schedule("*/30 * * * *", &, {scheduled: no, 
 			const [users, discordServers] = await Promise.all [
 				prisma.user.findMany
 					where:
+						active: yes
 						ftAddress:
 							not: ""
 				prisma.discordServer.findMany
@@ -103,9 +104,18 @@ export const monitorRoles = cronjob.schedule("*/30 * * * *", &, {scheduled: no, 
 								try
 									const discordServer = discordServers.find do isAddressEqual $1.ftAddress, subject
 									const guild = await discord.guilds.fetch discordServer.id
-									const member = await guild.members.fetch u.discordId
-									const roleObj = await guild.roles.fetch discordServer.roleId
 									
+									const member = try await guild.members.fetch u.discordId
+									catch e 
+										if e.code is 10007
+											return prisma.users.update
+												where:
+													id: u.id
+												data:
+													active: no
+									
+									const roleObj = await guild.roles.fetch discordServer.roleId
+
 									await member.roles.remove roleObj
 								catch e
 									E e, subject, u.ftAddress, sharesBalance
@@ -173,6 +183,7 @@ export default do(app)
 					data:
 						ftAddress: user.address
 						twitterAvatar: user.twitterPfpUrl
+						active: yes
 				
 				userAddress = user.address
 				
@@ -187,10 +198,18 @@ export default do(app)
 			if keyBalance > 0n
 				const guild = await discord.guilds.fetch discordServer.id
 				const member = await guild.members.fetch session.user.discordId
+				
 				const roleObj = await guild.roles.fetch discordServer.roleId
 				
 				await member.roles.add roleObj
 		
+				prisma.user.update(
+					where:
+						id: session.user.userId
+					data:
+						active: yes
+				).catch do E $1
+				
 				res.send true
 			else 
 				res.send false	
