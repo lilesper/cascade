@@ -10,7 +10,6 @@ datasource db {
 model DiscordServer {
     id          String       @id @unique
     creatorId   String
-    ftAddress   String?
     ftAddresses String[]
     roleId      String
     isConnected Boolean
