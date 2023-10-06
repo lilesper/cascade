@@ -112,7 +112,7 @@ export const monitorRoles = cronjob.schedule("*/5 * * * *", &, {scheduled: no, r
 				
 				const keyBalances = try await Promise.all m.discordServer.ftAddresses.map do contract.read.sharesBalance [$1, m.user.ftAddress]
 				catch e
-					E e, m.discordServer.ftAddress, m.user.ftAddress
+					E e, m.discordServer.ftAddresses, m.user.ftAddress
 					if !m.user.ftAddress
 						await deleteMembership m.userId, m.serverId
 						return L "removed membership"
@@ -121,7 +121,7 @@ export const monitorRoles = cronjob.schedule("*/5 * * * *", &, {scheduled: no, r
 				
 				const totalBalance = keyBalances.reduce(&, 0n) do $1 + $2
 
-				L m.discordServer.ftAddress
+				L m.discordServer.ftAddresses
 				L m.user.ftAddress
 				L totalBalance
 				
@@ -143,7 +143,7 @@ export const monitorRoles = cronjob.schedule("*/5 * * * *", &, {scheduled: no, r
 
 						L "removed"
 					catch e
-						E e, m.discordServer.ftAddress, m.user.ftAddress, keyBalances
+						E e, m.discordServer.ftAddresses, m.user.ftAddress, keyBalances
 		catch e
 			E e
 
