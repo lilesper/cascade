@@ -2,6 +2,7 @@ import { isAddress } from "viem"
 
 tag key-tag
 	last = no
+	index
 	discordServer
 	awaitingConfirmation
 
@@ -12,7 +13,7 @@ tag key-tag
 	settingFtAddress?
 
 	def setFtAddress confirmed? = no
-		return if confirmed? and !awaitingConfirmation
+		L index
 		settingFtAddress? = yes
 
 		if !isAddress newFtAddress
@@ -36,9 +37,10 @@ tag key-tag
 
 		if !confirmed? and editing? and !last
 			awaitingConfirmation = yes
+
 			return emit "mustConfirm",
 				message: "If you have members holding this key already, changing it will remove their roles from your server"
-				callback: "confirmSetFtAddress"
+				callback: "confirmSet{index}"
 		else
 			awaitingConfirmation = no
 			
@@ -63,14 +65,12 @@ tag key-tag
 
 			settingFtAddress? = no
 			newFtAddress = ""
+			L "nani"
 			editing? = no
 
 	removing?
 	def removeFtAddress confirmed? = no
-		return if confirmed? and !awaitingConfirmation
-
 		if confirmed?
-			awaitingConfirmation = no
 			removing? = yes
 			
 			let ftAddresses = [...discordServer.ftAddresses].filter do $1 isnt ftAddress
@@ -93,14 +93,14 @@ tag key-tag
 			awaitingConfirmation = yes
 			emit "mustConfirm"
 				message: "If you have members holding this key already, deleting it will remove their roles from your server"
-				callback: "confirmRemoveFtAddress"
-	
+				callback: "confirmRemove{index}"
+
 	def reset
 		editing? = no
 		newFtAddress = ""
 
 	<self>
-		<global @click.outside=(reset! if editing? and !awaitingConfirmation) @confirmSetFtAddress=(setFtAddress yes) @confirmRemoveFtAddress=(removeFtAddress yes)>
+		<global @click.outside=(reset! if editing? and !awaitingConfirmation) @{"confirmRemove{index}"}=(removeFtAddress yes) @{"confirmSet{index}"}=(setFtAddress yes)>
 
 		if last and !editing?
 			<p[c:white d:hcl fw:700 mt:4 cursor:pointer] @click=(editing? = yes)> 
@@ -108,15 +108,16 @@ tag key-tag
 				"Add a Key Address"
 				
 		else if ftAddress and !editing?
-			<p[c:white d:hcl fw:700 my:2]>
-				<span[flg:1 d:hcl w:75%]>
-					<span[ws:nowrap of:hidden tof:ellipsis]> ftAddress
-					"{ftAddress.slice -4}"
-				if removing?
-					<icon-tag.spin[ml:2 c:sky2 cursor:pointer] size=16 name="loading-03">
-				else	
-					<icon-tag[ml:2 c:sky2 cursor:pointer] size=16 name="edit-02" @click=(editing? = yes)>
-					<icon-tag[ml:2 c:sky2 cursor:pointer] size=16 name="delete" @click=removeFtAddress!>
+			<div[c:white d:hcl fw:700 my:2]>
+				<p[d:hcl flg:1 miw:0]>
+					<span[maw:100% w:100% of:hidden tof:ellipsis]> ftAddress
+				<p> "{ftAddress.slice -4}"
+				<div[flg:0 d:hcl]>
+					if removing?
+						<icon-tag.spin[ml:2 c:sky2 cursor:pointer] size=16 name="loading-03">
+					else	
+						<icon-tag[ml:2 c:sky2 cursor:pointer] size=16 name="edit-02" @click=(editing? = yes)>
+						<icon-tag[ml:2 c:sky2 cursor:pointer] size=16 name="delete" @click=removeFtAddress!>
 		else	
 			<form @submit.prevent=setFtAddress!>
 				<label[mx:-3 mb:-3]>

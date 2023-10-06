@@ -3,7 +3,12 @@ import "./key-tag.imba"
 tag discord-setup
 	checking?
 	interval
+	
 	@observable discordServer
+	@computed get ftAddresses
+		discordServer.ftAddresses
+	@computed get serverId
+		discordServer.id
 
 	def checkConnection
 		interval = setInterval(&,1000) do
@@ -91,14 +96,14 @@ tag discord-setup
 		if discordServer
 			<.card[bg:sky9 mt:-8 rdt:0 p:6 pt:12 pos:relative zi:2 d:vts] >
 				<h2[fs:md c:white]> "Key Addresses"
-				<p[mb:4 c:sky2 max-width:220px]> 
+				<p[mb:2 c:sky2 max-width:220px]> 
 					"What keys do members need to hold?"
 				
-				if discordServer.ftAddress.empty?
+				if discordServer.ftAddresses.empty?
 					<key-tag discordServer=discordServer>
 				else
-					for ftAddress in discordServer.ftAddresses
-						<key-tag ftAddress=ftAddress discordServer=discordServer>
+					for ftAddress, index in discordServer.ftAddresses
+						<key-tag ftAddress=ftAddress discordServer=discordServer index=index>
 					
 					<key-tag last=yes discordServer=discordServer>
 
