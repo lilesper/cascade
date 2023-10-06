@@ -21,8 +21,12 @@
     "do": "imba run --vite scripts/${s:=test}.imba",
     "do:staging": "cross-env DATABASE_URL=$DATABASE_URL_STAGING imba run --vite scripts/$s.imba",
     "do:prod": "cross-env DATABASE_URL=$DATABASE_URL_PROD imba run --vite scripts/$s.imba",
-    "backup": "sh scripts/backup.sh $e",
-    "restore": "sh scripts/restore.sh $e"
+    "backup": "sh scripts/backup.sh development",
+    "backup:staging": "sh scripts/backup.sh staging",
+    "backup:prod": "sh scripts/backup.sh production",
+    "restore": "sh scripts/restore.sh development",
+    "restore:staging": "sh scripts/restore.sh staging",
+    "restore:prod": "sh scripts/restore.sh production"
   },
   "devDependencies": {
     "imba": "^2.0.0-alpha.231",
