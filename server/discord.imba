@@ -110,18 +110,22 @@ export const monitorRoles = cronjob.schedule("*/5 * * * *", &, {scheduled: no, r
 				L "MEMBERSHIP--------------------------------------"
 				L m.serverId, m.userId
 				
-				const sharesBalance = try await contract.read.sharesBalance [m.discordServer.ftAddress, m.user.ftAddress]
+				const keyBalances = try await Promise.all m.discordServer.ftAddresses.map do contract.read.sharesBalance [$1, m.user.ftAddress]
 				catch e
 					E e, m.discordServer.ftAddress, m.user.ftAddress
 					if !m.user.ftAddress
 						await deleteMembership m.userId, m.serverId
 						return L "removed membership"
+					else
+						return
 				
+				const totalBalance = keyBalances.reduce(&, 0n) do $1 + $2
+
 				L m.discordServer.ftAddress
 				L m.user.ftAddress
-				L sharesBalance
+				L totalBalance
 				
-				if sharesBalance is 0n
+				if totalBalance is 0n
 					try
 						const guild = await discord.guilds.fetch m.serverId
 						
@@ -139,7 +143,7 @@ export const monitorRoles = cronjob.schedule("*/5 * * * *", &, {scheduled: no, r
 
 						L "removed"
 					catch e
-						E e, m.discordServer.ftAddress, m.user.ftAddress, sharesBalance
+						E e, m.discordServer.ftAddress, m.user.ftAddress, keyBalances
 		catch e
 			E e
 
@@ -211,9 +215,10 @@ export default do(app)
 					where:
 						id: req.params.discordId
 
-			const keyBalance\bigint = await contract.read.sharesBalance [discordServer.ftAddress, userAddress]
+			const keyBalances = await Promise.all discordServer.ftAddresses.map do contract.read.sharesBalance [$1, userAddress]
+			const totalBalance = keyBalances.reduce(&, 0n) do $1 + $2
 
-			if keyBalance > 0n
+			if totalBalance > 0n
 				const guild = await discord.guilds.fetch discordServer.id
 				const member = await guild.members.fetch session.user.discordId
 				
@@ -221,8 +226,13 @@ export default do(app)
 				
 				await member.roles.add roleObj
 		
-				prisma.membership.create(
-					data:
+				prisma.membership.upsert(
+					where:
+						userId_serverId:
+							userId: session.user.userId
+							serverId: discordServer.id
+					update: {}
+					create:
 						userId: session.user.userId
 						serverId: discordServer.id
 				).catch do E $1

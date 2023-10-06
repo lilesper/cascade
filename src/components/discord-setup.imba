@@ -3,6 +3,7 @@ import "./key-tag.imba"
 tag discord-setup
 	checking?
 	interval
+	@observable discordServer
 
 	def checkConnection
 		interval = setInterval(&,1000) do
@@ -47,7 +48,7 @@ tag discord-setup
 	
 	def updateServer e\Event
 		discordServer = e.detail.server
-		imba.commit!
+		await imba.commit!
 
 	def unmount
 		clearInterval interval if interval
@@ -64,7 +65,7 @@ tag discord-setup
 		
 		checking? = no
 
-	<self>
+	<self[maw:268px]>
 		<global @editedKey=updateServer>
 		<div.card[bg:white p:6 d:vflex a:start pos:relative zi:3]>
 			if !discordServer

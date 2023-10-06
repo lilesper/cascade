@@ -50,7 +50,14 @@ tag key-tag
 				ftAddresses.push newFtAddress
 
 			const server = try await S.update "discordServer", {id: discordServer.id}, {ftAddresses}
-			catch e E e
+			catch e 
+				settingFtAddress? = no
+				
+				E e
+				
+				return emit "notify", 
+					message: "Unable to remove Key Address, check connection"
+					type: "error"
 
 			emit "editedKey", {server}
 
@@ -66,10 +73,18 @@ tag key-tag
 			awaitingConfirmation = no
 			removing? = yes
 			
-			let ftAddresses = [...discordServer.ftAddresses].filter & isnt ftAddress
+			let ftAddresses = [...discordServer.ftAddresses].filter do $1 isnt ftAddress
 			
 			const server = try await S.update "discordServer", {id: discordServer.id}, {ftAddresses}
-			catch e E e
+			catch e
+				removing? = no
+				
+				E e
+
+				return emit "notify", 
+					message: "Unable to remove Key Address, check connection"
+					type: "error"
+
 			
 			removing? = no
 
@@ -77,7 +92,7 @@ tag key-tag
 		else
 			awaitingConfirmation = yes
 			emit "mustConfirm"
-				message: "If you have members holding this key already, changing it will remove their roles from your server"
+				message: "If you have members holding this key already, deleting it will remove their roles from your server"
 				callback: "confirmRemoveFtAddress"
 	
 	def reset
@@ -94,7 +109,9 @@ tag key-tag
 				
 		else if ftAddress and !editing?
 			<p[c:white d:hcl fw:700 my:2]>
-				"{ftAddress.slice 0, 6}...{ftAddress.slice -4}"
+				<span[flg:1 d:hcl w:75%]>
+					<span[ws:nowrap of:hidden tof:ellipsis]> ftAddress
+					"{ftAddress.slice -4}"
 				if removing?
 					<icon-tag.spin[ml:2 c:sky2 cursor:pointer] size=16 name="loading-03">
 				else	
