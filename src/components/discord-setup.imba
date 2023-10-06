@@ -1,4 +1,4 @@
-import { isAddress } from "viem"
+import "./key-tag.imba"
 
 tag discord-setup
 	checking?
@@ -43,40 +43,11 @@ tag discord-setup
 		
 		setTimeout(&,3000) do
 			if $copyLink
-				$copyLink.innerHTML = "Copy Link" 
-
-	editing?
-	ftAddress
-	settingFtAddress?
-
-	def setFtAddress confirmed? = no
-		settingFtAddress? = yes
-
-		if isAddress ftAddress
-			if !discordServer.ftAddress or confirmed?
-				S.ftData = await S.getTwitterData ftAddress
-
-				if S.ftData
-					discordServer = try await S.update "discordServer", {id: discordServer.id}, {ftAddress: ftAddress}
-					catch e E e
-
-					emit "notify"
-						message: "Friend Tech Key set!"
-				else
-					emit "notify"
-						message: "Not a Friend Tech Account"
-						type: "error"
-			else 
-				emit "mustConfirm",
-					message: "If you have members holding this key already, changing it will remove their roles from your server"
-					callback: "confirmSetFtAddress"
-		else 
-			emit "notify",
-				message: "Not a valid address"
-				type: "error"
+				$copyLink.innerHTML = "Copy Link"
 	
-		settingFtAddress? = no
-		editing? = no
+	def updateServer e\Event
+		discordServer = e.detail.server
+		imba.commit!
 
 	def unmount
 		clearInterval interval if interval
@@ -94,8 +65,7 @@ tag discord-setup
 		checking? = no
 
 	<self>
-		<global @confirmSetFtAddress=(setFtAddress yes)>
-
+		<global @editedKey=updateServer>
 		<div.card[bg:white p:6 d:vflex a:start pos:relative zi:3]>
 			if !discordServer
 				<div>
@@ -118,30 +88,21 @@ tag discord-setup
 					<button[bg:transparent shadow:none c:sky9 bg@hover:sky1] .disabled=removing? @click=removeBot!> if removing? then "Removing..." else "Remove"
 		
 		if discordServer
-			<form.card[bg:sky9 mt:-8 rdt:0 p:6 pt:12 pos:relative zi:2 d:vts] @submit.prevent=setFtAddress!>
-				<h2[fs:md c:white]> "Gating settings"
+			<.card[bg:sky9 mt:-8 rdt:0 p:6 pt:12 pos:relative zi:2 d:vts] >
+				<h2[fs:md c:white]> "Key Addresses"
 				<p[mb:4 c:sky2 max-width:220px]> 
-					"What key"
-					" do members need to hold?"
+					"What keys do members need to hold?"
 				
-				if discordServer.ftAddress and !editing?
-					<h3[fs:md c:sky2]> "Selected Key Address"
-					<p[c:white d:hcl fw:700]> 
-						"{discordServer.ftAddress.slice 0, 6}...{discordServer.ftAddress.slice -4}"
-						<icon-tag[ml:2 c:sky2 cursor:pointer] size=16 name="edit-02" @click=(editing? = yes)>
-				
-				if !discordServer.ftAddress or editing?
-					<label[mx:-3 mb:-3]>
-						<input[bg:cooler9/20 c:white c@placeholder:sky6 w:100%] placeholder="0x..." bind=ftAddress>
-						<span.label[c:cooler2]> "Friend Tech Key Address"
-						
-						<button[w:7 h:7 shadow:md rd:100px bg:sky5 pos:absolute b:2 r:2 d:flex a:center j:center] [bg:sky9]=settingFtAddress?>
-							if settingFtAddress?
-								<icon-tag.spin[c:sky3] name="loading-03" size=18>
-							else	
-								<icon-tag[c:white] name="arrow-right" size=18>
+				if discordServer.ftAddress.empty?
+					<key-tag discordServer=discordServer>
+				else
+					for ftAddress in discordServer.ftAddresses
+						<key-tag ftAddress=ftAddress discordServer=discordServer>
+					
+					<key-tag last=yes discordServer=discordServer>
+
 			
-		if discordServer and discordServer.ftAddress
+		if discordServer and discordServer.ftAddresses.length
 			<div.card[bg:cooler9 mt:-8 rdt:0 p:6 pt:12 pos:relative zi:1]>
 				<h2[fs:md c:cooler2]> "Setup instructions"
 				<p[mb:4 c:cooler4 max-width:220px]> 

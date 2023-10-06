@@ -18,7 +18,7 @@
     "save": "prisma migrate dev",
     "save:staging": "cross-env DATABASE_URL=$DATABASE_URL_STAGING prisma migrate deploy",
     "save:prod": "cross-env DATABASE_URL=$DATABASE_URL_PROD prisma migrate deploy",
-    "do": "imba run --vite scripts/$s.imba",
+    "do": "imba run --vite scripts/${s:=test}.imba",
     "do:staging": "cross-env DATABASE_URL=$DATABASE_URL_STAGING imba run --vite scripts/$s.imba",
     "do:prod": "cross-env DATABASE_URL=$DATABASE_URL_PROD imba run --vite scripts/$s.imba",
     "backup": "sh scripts/backup.sh $e",

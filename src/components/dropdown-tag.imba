@@ -1,8 +1,11 @@
-css .card button ta:left j:start
+css 
+	.card button ta:left j:start
+	^div pos:relative
 
 tag dropdown-tag
 	show? = no
 	onlySelf = no
+	tip = no
 
 	timer = null
 
@@ -10,7 +13,7 @@ tag dropdown-tag
 		#parent.addEventListener "click" do
 			let goodToGo = if onlySelf then no else yes
 			if onlySelf
-				goodToGo = $1.target is parent
+				goodToGo = $1.target is #parent
 			show? = !show? if goodToGo
 			imba.commit!
 
