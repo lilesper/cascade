@@ -140,6 +140,7 @@ export const monitorRoles = cronjob.schedule("*/5 * * * *", &, {scheduled: no, r
 						const roleObj = await guild.roles.fetch m.discordServer.roleId
 
 						await member.roles.remove roleObj
+						await deleteMembership m.userId, m.serverId
 
 						L "removed"
 					catch e
