@@ -10,12 +10,19 @@
     "view": "cross-env NODE_ENV=production node ./dist/index.mjs",
     "debug": "node --inspect-brk dist/server",
     "test": "imba test run src",
-    "up": "sh deploy.sh",
-    "up:prod": "sh deploy.sh production",
+    "up": "sh scripts/deploy.sh",
+    "up:prod": "sh scripts/deploy.sh production",
     "gen": "prisma generate",
+    "gen:staging": "cross-env DATABASE_URL=$DATABASE_URL_STAGING prisma generate",
+    "gen:prod": "cross-env DATABASE_URL=$DATABASE_URL_PROD prisma generate",
     "save": "prisma migrate dev",
     "save:staging": "cross-env DATABASE_URL=$DATABASE_URL_STAGING prisma migrate deploy",
-    "save:prod": "cross-env DATABASE_URL=$DATABASE_URL_PROD prisma migrate deploy"
+    "save:prod": "cross-env DATABASE_URL=$DATABASE_URL_PROD prisma migrate deploy",
+    "do": "imba run --vite scripts/$s.imba",
+    "do:staging": "cross-env DATABASE_URL=$DATABASE_URL_STAGING imba run --vite scripts/$s.imba",
+    "do:prod": "cross-env DATABASE_URL=$DATABASE_URL_PROD imba run --vite scripts/$s.imba",
+    "backup": "sh scripts/backup.sh $e",
+    "restore": "sh scripts/restore.sh $e"
   },
   "devDependencies": {
     "imba": "^2.0.0-alpha.231",
