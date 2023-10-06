@@ -13,7 +13,6 @@ tag key-tag
 	settingFtAddress?
 
 	def setFtAddress confirmed? = no
-		L index
 		settingFtAddress? = yes
 
 		if !isAddress newFtAddress
@@ -65,7 +64,6 @@ tag key-tag
 
 			settingFtAddress? = no
 			newFtAddress = ""
-			L "nani"
 			editing? = no
 
 	removing?
