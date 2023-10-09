@@ -109,7 +109,9 @@ export const monitorRoles = cronjob.schedule("*/5 * * * *", &, {scheduled: no, r
 			for m in memberships
 				L "MEMBERSHIP--------------------------------------"
 				L m.serverId, m.userId
-				
+
+				await new Promise do setTimeout $1, 1s
+
 				const keyBalances = try await Promise.all m.discordServer.ftAddresses.map do contract.read.sharesBalance [$1, m.user.ftAddress]
 				catch e
 					E e, m.discordServer.ftAddresses, m.user.ftAddress
