@@ -9,7 +9,7 @@ import np from 'node:path'
 import url from 'node:url'
 
 import prisma from "./prisma.imba"
-import auth from "./auth.imba"
+import auth, { auth as lucia } from "./auth.imba"
 import ft from "./ft.imba"
 import discord, { monitorRoles } from "./discord.imba"
 
@@ -81,11 +81,11 @@ def createServer(root = process.cwd(), dev? = import.meta.env.MODE === "developm
 	app.use helmet.contentSecurityPolicy
 		directives:
 			defaultSrc: ["'self'"]
-			scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'", "https://verify.walletconnect.org", "https://verify.walletconnect.com", "https://static.highlight.io"]
+			scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'", "https://verify.walletconnect.org", "https://verify.walletconnect.com", "https://static.highlight.io", "https://unpkg.com/@june-so/analytics-next/dist/umd/standalone.js", "https://plausible.io"]
 			workerSrc: ["'self'", "blob:"]
 			styleSrc: ["'self'", "'unsafe-inline'"]
 			imgSrc: ["'self'", "data:", "https://explorer-api.walletconnect.com", "https://pbs.twimg.com", "https://d3egfmvgqzu76k.cloudfront.net", "https://cdn.discordapp.com"]
-			connectSrc: ["'self'", "ws://localhost:28000", "https://prod.spline.design", "https://draft.spline.design", "https://pub.highlight.run", "wss://relay.walletconnect.com", "https://explorer-api.walletconnect.com", "https://discord.com"]
+			connectSrc: ["'self'", "ws://localhost:28000", "https://prod.spline.design", "https://draft.spline.design", "https://pub.highlight.run", "wss://relay.walletconnect.com", "https://explorer-api.walletconnect.com", "https://discord.com", "https://api.june.so", "https://plausible.io"]
 			fontSrc: ["'self'", "https:"]
 			objectSrc: ["'none'"]
 			frameSrc: ["https://verify.walletconnect.org", "https://verify.walletconnect.com"]
@@ -109,6 +109,8 @@ def createServer(root = process.cwd(), dev? = import.meta.env.MODE === "developm
 
 	app.use "/*/assets", express.static (path.join (new URL(".", import.meta.url).pathname, "dist_client/assets"))
 
+	app.get "/health", do(req, res) res.status(200).send "👍"
+
 	app.use "*", do(req, res)
 		const url = req.originalUrl
 		a++
@@ -121,30 +123,33 @@ def createServer(root = process.cwd(), dev? = import.meta.env.MODE === "developm
 					<meta name="viewport" content="width=device-width, initial-scale=1">
 					<meta name="description" content="Frenpass helps active Friend Tech users manage large audiences by migrating them to an organized Discord server with on-chain verification and auto-moderation">
 					
-					<title> "Frenpass | Organize your community beyond the chaos of Friend Tech"
+					<title> "Frenpass | Move your Friend Tech chat to Discord"
 					
 					<link rel="icon" type="image/png" href="/images/frenpass-ico.png">
 
 					# open graph tags
-					<meta property="og:url" content="https://www.frenpass.app">
+					<meta property="og:url" content="https://frenpass.app">
 					<meta property="og:type" content="website">
-					<meta property="og:title" content="Organize your community beyond the chaos of Friend Tech">
+					<meta property="og:title" content="Move your Friend Tech chat to Discord">
 					<meta property="og:description" content="Frenpass helps active Friend Tech users manage large audiences by migrating them to an organized Discord server with on-chain verification and auto-moderation">
-					<meta property="og:image" content="/images/og-img.jpg">
+					<meta property="og:image" content="https://frenpass.app/images/og-img.jpg">
 
 					# open graph tags (twitter)
 					<meta name="twitter:card" content="summary_large_image">
 					<meta property="twitter:domain" content="frenpass.app">
-					<meta property="twitter:url" content="https://www.frenpass.app">
-					<meta name="twitter:title" content="Organize your community beyond the chaos of Friend Tech">
+					<meta property="twitter:url" content="https://frenpass.app">
+					<meta name="twitter:title" content="Move your Friend Tech chat to Discord">
 					<meta name="twitter:description" content="Frenpass helps active Friend Tech users manage large audiences by migrating them to an organized Discord server with on-chain verification and auto-moderation">
-					<meta name="twitter:image" content="/images/og-img.jpg">
+					<meta name="twitter:image" content="https://frenpass.app/images/og-img.jpg">
+
+					<script defer data-domain="frenpass.app" src="https://plausible.io/js/script.js">
 
 					if dev?
 						<script type="module" src="/@vite/client">
 						<script type="module" src="/src/main.js">
 						<style id="dev_ssr_css" innerHTML=ssr-styles>
 					else
+
 						const prod-src = manifest["src/main.js"].file
 						const css-files = manifest["src/main.js"].css
 						
@@ -161,6 +166,22 @@ def createServer(root = process.cwd(), dev? = import.meta.env.MODE === "developm
 			vite and vite.ssrFixStacktrace(e)
 			E e
 			res.status(500).send { error: e.message }
+	
+	app.use do(err, req, res, next)
+		E err
+		
+		const authRequest = lucia.handleRequest req, res
+		const session = await authRequest.validate!
+
+		L session..user
+		L req.path
+		L req.method
+		L req.body
+		L req.query
+		L req.headers
+		
+		res.status(500).send {error: err.message}
+	
 	return
 		app: app
 		vite: vite
@@ -170,7 +191,7 @@ L "server created"
 
 monitorRoles.start! if process.env.ENV isnt "staging"
 
-const server = app.listen port, do L "http://localhost:{port}"
+const server = app.listen port, do L process.env.HOST
 const exitProcess = do
 	L "exiting process"
 	try await server.close do L "server closed" finally process.exit 0

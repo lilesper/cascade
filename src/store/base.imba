@@ -82,14 +82,14 @@ export const base =
 			E e
 			false
 
-	query: do(table, query, external)
+	query: do(table, query, external, select)
 		try
 			await (await window.fetch (if external then "/trades" else "/fetch"),
 				method: "POST"
 				mode: "same-origin"
 				headers:
 					"Content-Type": "application/json"
-				body: JSON.stringify {table, query}).json!
+				body: JSON.stringify {table, query, select}).json!
 		catch e
 			E e
 			false

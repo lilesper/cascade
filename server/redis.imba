@@ -9,6 +9,7 @@ export const redis = await new Redis process.env.REDIS_URL,
 export const padlock =
 	def lock key, ttl
 		const result = await redis.set key, serverId, "EX", ttl, "NX"
+		
 		result is "OK"
 	
 	def unlock key
@@ -21,4 +22,5 @@ export const padlock =
 		'''
 
 		const result = await redis.eval script, 1, key, serverId
+		
 		result is 1

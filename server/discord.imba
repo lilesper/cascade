@@ -14,6 +14,12 @@ export const discord = new Client {intents: [GatewayIntentBits.Guilds, GatewayIn
 discord.login process.env.DISCORD_TOKEN
 discord.setMaxListeners 50
 
+def createRole guild
+	await guild.roles.create
+		name: "🔑 Key Holder"
+		color: "#11a5e9"
+		reason: "To allow access for key holders"
+
 discord.on "guildCreate", do(guild)
 	return if process.env.ENV is "staging"
 	return if guild.id is "1123937233368522832" and process.env.ENV is "production"
@@ -23,10 +29,7 @@ discord.on "guildCreate", do(guild)
 
 	if await padlock.lock lockKey, 1
 		try
-			const role = await guild.roles.create
-				name: "🔑 Key Holder"
-				color: "#11a5e9"
-				reason: "To allow access for key holders"
+			const role = await createRole guild
 			
 			let interval
 			let tries = 0
@@ -151,16 +154,41 @@ export const monitorRoles = cronjob.schedule("*/5 * * * *", &, {scheduled: no, r
 			E e
 
 export default do(app)
-	app.get("/discord-roles/:guildId") do(req, res)
+	app.get("/discord-roles/:discordId") do(req, res, next)
 		try
-			const server = await discord.guilds.fetch req.params.guildId
+			const guild = await discord.guilds.fetch req.params.discordId
 			
-			res.send await server.roles.fetch!
-		catch e
-			E e
-			res.status(500).send { error: e.message }
+			res.send await guild.roles.fetch!
+		catch e next e
 	
-	app.get("/discord-remove/:discordId") do(req, res)
+	app.get("/discord-create-role/:discordId") do(req, res, next)
+		try
+			const authRequest = auth.handleRequest req, res
+			const session = await authRequest.validate!
+			const discordServer = await prisma.discordServer.findUnique
+				where:
+					id: req.params.discordId
+
+			if !session or !session.user or discordServer.creatorId isnt session.user.discordId
+				return res.status(401).send { error: "Unauthorized" }
+
+			const guild = await discord.guilds.fetch req.params.discordId
+
+			const role = await createRole guild
+			await prisma.discordServer.update
+				where:
+					id: req.params.discordId
+				data:
+					roleId: role.id
+
+			res.send role
+		catch e 
+			if e.code is 50013
+				res.status(403).send { error: 50013 }
+			else
+				next e
+	
+	app.get("/discord-remove/:discordId") do(req, res, next)
 		try
 
 			const server = await discord.guilds.fetch req.params.discordId
@@ -173,11 +201,9 @@ export default do(app)
 			await server.leave!
 			
 			res.send true
-		catch e
-			E e, req.body
-			res.status(500).send { error: e.message }
+		catch e next e
 		
-	app.get("/discord-assign-role/:discordId") do(req, res)
+	app.get("/discord-assign-role/:discordId") do(req, res, next)
 		const authRequest = auth.handleRequest req, res
 		const session = await authRequest.validate!
 
@@ -243,8 +269,6 @@ export default do(app)
 				res.send true
 			else 
 				res.send false	
-		catch e
-			E e
-			res.status(500).send { error: e.message }
+		catch e next e
 
 	

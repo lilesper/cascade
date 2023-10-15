@@ -1,4 +1,6 @@
 export const utils =
+	avatarLink: "https://cdn.discordapp.com/avatars"
+	
 	waitForElm: do(selector, parent)
 		new Promise do(resolve)
 			const elm = if parent then parent else document

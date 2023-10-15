@@ -1,5 +1,3 @@
-import { getAddress } from "viem"
-
 css 
 	p .tag bg:cooler7 c:white
 	input[type=number] appearance:none
@@ -18,15 +16,21 @@ export default tag Discord
 	subscriptions = []
 	checkingStatus?
 	
-	def checkStatus
-		return unless S.user.twitterId
-		
+	def checkStatus		
 		checkingStatus? = yes
+		imba.commit!
 		
 		try
 			const res = await (await window.fetch "/discord-assign-role/{discordId}").json!
+			
+			if res.error
+				if res.error is 50013 then emit "notify", 
+					message: "Bot lacks permission, inform server owner"
+					type: "error"
+			else
+				keyHolder? = res
 
-			keyHolder? = res and !res.error
+			if res then window.analytics..track "Granted Access"
 		catch e E e
 	
 		checkingStatus? = no
@@ -35,13 +39,11 @@ export default tag Discord
 	
 	def mount
 		discordId = context.route.params.id
-		
+
 		waitFor S, "user", do checkStatus! if S.user.twitterId
 	
 	<self.splash> if web?
 		<div[d:vcc]>
-			if S.user then <user-tag[mb:2]>
-
 			if !S.user..discordId
 				<div.card[bg:white p:6 w:240px d:flex fld:column]>
 					<div[ta:center d:flex fld:column a:center flg:1]>

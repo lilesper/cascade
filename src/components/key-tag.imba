@@ -17,19 +17,23 @@ tag key-tag
 
 		if !isAddress newFtAddress
 			settingFtAddress? = no
+			
 			return emit "notify",
 				message: "Not a valid address"
 				type: "error"
 		
 		if discordServer.ftAddresses.includes newFtAddress
 			settingFtAddress? = no
+
 			return emit "notify"
 				message: "This Key Address is already added"
 				type: "error"
 
 		S.ftData = await S.getTwitterData newFtAddress
+
 		if !S.ftData
 			settingFtAddress? = no
+		
 			return emit "notify"
 				message: "Not a Friend Tech Account"
 				type: "error"
@@ -57,7 +61,7 @@ tag key-tag
 				E e
 				
 				return emit "notify", 
-					message: "Unable to remove Key Address, check connection"
+					message: "Unable to add Key Address, check connection"
 					type: "error"
 
 			emit "editedKey", {server}
@@ -65,6 +69,8 @@ tag key-tag
 			settingFtAddress? = no
 			newFtAddress = ""
 			editing? = no
+			
+			window.analytics..track "Added Key"
 
 	removing?
 	def removeFtAddress confirmed? = no
@@ -87,6 +93,7 @@ tag key-tag
 			removing? = no
 
 			emit "editedKey", {server}
+			window.analytics..track "Removed Key"
 		else
 			awaitingConfirmation = yes
 			emit "mustConfirm"

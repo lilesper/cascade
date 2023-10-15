@@ -28,6 +28,7 @@ purge_cache.sh
 *.sw?
 .gitignore_backup
 
+.dev-ssr
 scripts
 deploy.sh
 Dockerfile

@@ -10,11 +10,15 @@ import "./components/notify-tag.imba"
 import "./components/confirm-modal.imba"
 import "./components/route-tag.imba"
 import "./components/user-tag.imba"
+import "./components/avatar-tag.imba"
 
 global.S = store
 
 def Index do (await import "./pages/Index.imba").default
+def Setup do (await import "./pages/Setup.imba").default
 def Discord do (await import "./pages/Discord.imba").default
+def Docs do (await import "./pages/docs/Index.imba").default
+
 const web? = !import.meta.env.SSR
 const dev? = if web? and window.location.hostname is "localhost" then yes else no
 
@@ -35,6 +39,31 @@ extend tag element
 				clearInterval interval
 				callback!
 
+tag june-tag
+	def mount
+		window.analytics = {}
+		
+		window.analytics._writeKey = import.meta.env.VITE_JUNE
+		
+		let script = document.createElement("script");
+		
+		script.type = "application/javascript";
+		script.onload = do 
+			window.analytics.page!
+			
+			if S.user
+				window.analytics.identify S.user.userId,
+					name: S.user.discordUsername or S.user.twitterUsername
+					avatar: if S.user.discordAvatar then "https://cdn.discordapp.com/avatars/{S.user.discordId}/{S.user.discordAvatar}.png" else S.user.twitterAvatar
+				
+				window.analytics.track "Connected"
+
+		script.src = "https://unpkg.com/@june-so/analytics-next/dist/umd/standalone.js";
+		
+		let first = document.getElementsByTagName('script')[0];
+		
+		first.parentNode.insertBefore(script, first);
+
 export default tag App
 	def hydrate
 		schedule!
@@ -42,6 +71,13 @@ export default tag App
 	
 	def mount
 		document.getElementById("dev_ssr_css")..remove!
+
+		store.fetch("/user").then do
+			S.user = $1
+
+			imba.commit!
+
+			if S.user and imba.router.path is "/" then imba.router.go "/setup"
 
 		const { H } = await import "highlight.run"
 
@@ -57,16 +93,24 @@ export default tag App
 			else
 				H.consumeError e, "{e.message}"
 
-		S.user = await store.fetch "/user"
+		waitFor S, "user", do 
+			H.identify S.user.userId, 
+				avatar: if S.user.discordAvatar then "https://cdn.discordapp.com/avatars/{S.user.discordId}/{S.user.discordAvatar}.png" else S.user.twitterAvatar
+				highlightDisplayName: S.user.discordUsername or S.user.twitterUsername
+		
 		
 		
 
 	def render
 		<self> if web?
+			<june-tag>
+
 			<div.main[d:flex fld:column ai:center w:100% mb:20]>
 				<nav-tag[my:8 zi:100]>
 				
 				<route-tag route="/" page=Index>
+				<route-tag route="/setup" page=Setup>
+				<route-tag route="/docs" page=Docs>
 				<route-tag route="/discord/" page=Discord>
 				<route-tag route="/discord/:id" page=Discord>
 

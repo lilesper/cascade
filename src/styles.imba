@@ -47,3 +47,36 @@ global css @root
 		to bgc: violet4/0
 	
 
+	.marquee
+		overflow: hidden
+		display: flex
+		width: 100%
+
+	.marquee.marquee-left .marquee-inner
+		-webkit-animation: marquee-left 40s linear infinite
+		animation: marquee-left 40s linear infinite
+			
+	.marquee.marquee-right .marquee-inner
+		-webkit-animation: marquee-right 40s linear infinite
+		animation: marquee-right 40s linear infinite
+
+	marquee-inner 
+		flex-shrink:0
+		display: flex
+		align-items: center
+		width: -webkit-fit-content
+		width: -moz-fit-content
+		width: fit-content
+		will-change: transform
+
+	.marquee-content
+		display: inline-block
+		white-space: nowrap
+	
+	@keyframes marquee-left
+		0% transform: translate3d(0, 0, 0)
+		100% transform: translate3d(-100%, 0, 0)
+
+	@keyframes marquee-right
+		0% transform: translate3d(-100%, 0, 0)
+		100% transform: translate3d(0%, 0, 0)

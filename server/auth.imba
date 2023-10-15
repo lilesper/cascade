@@ -38,69 +38,46 @@ export const twitterAuth = twitter auth,
 	redirectUri: "{process.env.HOST}/login/x/callback"
 
 export default do(app)
-	app.get "/login/discord", do(req,res)
+	app.get "/login/discord", do(req, res, next)
 		try
 			const [url, state] = await discordAuth.getAuthorizationUrl!
+			const sessionData =
+				state: state
+				originalRoute: req.query.redirect or "/"
+			
+			redis.set "temp:{state}", (JSON.stringify sessionData), "EX", 3600
 
-			res.cookie "discord_oauth_state", state,
-				httpOnly: yes
-				secure: !dev?
-				path: "/"
-				maxAge: 1hours
-			
-			res.cookie "original_route", req.query.redirect or "/",
-				httpOnly: yes
-				secure: !dev?
-				path: "/"
-				maxAge: 1hours
-			
 			res.status(302).setHeader("Location", url.toString!).end!
-		catch e
-			E e
-			res.status(500).send {message: e.message}
+		catch e next e
 
-	app.get "/login/x", do(req,res)
+	app.get "/login/x", do(req, res, next)
 		try
 			const authRequest = auth.handleRequest req, res
 			const session = await authRequest.validate!
 			const [url, codeVerifier, state] = await twitterAuth.getAuthorizationUrl!
-
-			res.cookie "twitter_code_verifier", codeVerifier,
-				httpOnly: yes
-				secure: !dev?
-				path: "/"
-				maxAge: 1hours
+			const sessionData =
+				codeVerifier: codeVerifier
+				sessionUserId: session.user.userId
+				state: state
+				originalRoute: req.query.redirect or "/"
 			
-			res.cookie "user_id", session.user.userId,
-				httpOnly: yes
-				secure: !dev?
-				path: "/"
-				maxAge: 1hours
-			
-			res.cookie "twitter_oauth_state", state,
-				httpOnly: yes
-				secure: !dev?
-				path: "/"
-				maxAge: 1hours
-			
-			res.cookie "original_route", req.query.redirect or "/",
-				httpOnly: yes
-				secure: !dev?
-				path: "/"
-				maxAge: 1hours
+			redis.set "temp:{state}", (JSON.stringify sessionData), "EX", 3600
 			
 			res.status(302).setHeader("Location", url.toString!).end!
 		catch e
 			E e
-			res.status(500).send {message: e.message}
+			next e
 	
-	app.get "/login/discord/callback", do(req,res)
+	app.get "/login/discord/callback", do(req, res, next)
 		try
-			const cookies = parseCookie req.headers.cookie or ""
-			const storedState = cookies.discord_oauth_state
-			const originalRoute = cookies.original_route
 			const state = req.query.state
 			const code = req.query.code
+			const sessionData = JSON.parse await redis.get "temp:{state}"
+			
+			if sessionData then redis.del "temp:{state}"
+			
+			const storedState = sessionData.state
+			const originalRoute = sessionData.originalRoute
 
 			if !storedState or !state or storedState isnt state or code !isa "string"
 				return res.status(302).setHeader("Location", originalRoute).end!
@@ -118,23 +95,25 @@ export default do(app)
 
 			res.status(302).setHeader("Location", originalRoute).end!
 		catch e
-			E e
 			return res.sendStatus 400 if e isa OAuthRequestError
-			res.status(500).send {message: e.message}
+			next e
 	
-	app.get "/login/x/callback", do(req,res)
+	app.get "/login/x/callback", do(req, res, next)
 		try
-			const cookies = parseCookie req.headers.cookie or ""
-			const storedState = cookies.twitter_oauth_state
-			const originalRoute = cookies.original_route
 			const state = req.query.state
 			const code = req.query.code
+			const sessionData = JSON.parse await redis.get "temp:{state}"
+			
+			if sessionData then redis.del "temp:{state}"
+
+			const storedState = sessionData.state
+			const originalRoute = sessionData.originalRoute
 
 			if !storedState or !state or storedState isnt state or code !isa "string"
 				return res.status(302).setHeader("Location", originalRoute).end!
 			
-			const codeVerifier = cookies.twitter_code_verifier
-			const userId = cookies.user_id
+			const codeVerifier = sessionData.codeVerifier
+			const userId = sessionData.sessionUserId
 			const { getExistingUser, twitterUser, createKey } = await twitterAuth.validateCallback code, codeVerifier
 			
 			let user = await getExistingUser!
@@ -159,11 +138,10 @@ export default do(app)
 
 			res.status(302).setHeader("Location", originalRoute).end!
 		catch e
-			E e
 			return res.sendStatus 400 if e isa OAuthRequestError
-			res.status(500).send {message: e.message}
+			next e
 
-	app.get "/user", do(req, res)
+	app.get "/user", do(req, res, next)
 		try
 			const authRequest = auth.handleRequest req, res
 			const session = await authRequest.validate!
@@ -172,11 +150,9 @@ export default do(app)
 				res.json session.user
 			else
 				res.json null
-		catch e
-			E e
-			res.status(500).send {error: e.message}
+		catch e next e
 	
-	app.get "/logout", do(req, res)
+	app.get "/logout", do(req, res, next)
 		try
 			const authRequest = auth.handleRequest req, res
 			const session = await authRequest.validate!
@@ -187,7 +163,5 @@ export default do(app)
 			authRequest.setSession null
 
 			res.status(302).setHeader("Location", "/").end!
-		catch e
-			E e
-			res.status(500).send {error: e.message}
+		catch e next e
 	

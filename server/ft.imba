@@ -4,7 +4,7 @@ const ftApi = "https://prod-api.kosetto.com/"
 
 
 export default do(app)
-	app.get("/twitter-ftdata/:address") do(req, res)
+	app.get("/twitter-ftdata/:address") do(req, res, next)
 		try
 			const response = await fetch "{ftApi}users/{req.params.address}",
 				method: "GET"
@@ -14,6 +14,4 @@ export default do(app)
 			const data = await response.json!
 
 			res.send data
-		catch e
-			E e, req.body
-			res.status(500).send { error: e.message }
+		catch e next e
